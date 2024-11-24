@@ -1,0 +1,64 @@
+---
+title: "Week 11 Assignment - extra credit"
+author: "MD Asadul Islam"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(readr)
+```
+
+### Movie Ratings Data
+
+The MovieRatings sheet contains movie ratings given by various critics. Each row represents a critic, and each column represents a movie. The ratings are on a scale of 1 to 5, and some values are missing, indicating that the critic did not rate that movie. Therefore, the NaN values should be addressed during the considerations of the recommender system.
+
+### Calculating the Average Overall Rating
+
+```{r read data and calculate}
+file_path <- "C:\\Documents\\R Projects\\MovieRatings.xlsx"
+movie_ratings_df <- read_excel(file_path, sheet = "MovieRatings")
+overall_avg_rating <- mean(unlist(movie_ratings_df[,-1]), na.rm = TRUE)
+overall_avg_rating
+```
+
+### Calculating the Movie Bias
+
+```{r movie bias}
+movie_avg_ratings <- colMeans(movie_ratings_df[,-1], na.rm = TRUE)
+movie_biases <- movie_avg_ratings - overall_avg_rating
+movie_biases
+```
+### Calculating the Critic
+```{r code for critic bias}
+critic_avg_ratings <- rowMeans(movie_ratings_df[,-1], na.rm = TRUE)
+critic_biases <- critic_avg_ratings - overall_avg_rating
+critic_biases
+
+```
+### Predict Ratings for Recommender to Pick
+A Global Baseline Estimate recommender system predicts the ratings for items by users using a non-personalized approach. Once these predictions are made, the system can recommend movies to users based on the highest predicted ratings for movies they haven't rated yet. This is why the prediction is important in ensuring that the recommender works correctly. 
+
+```{r code for prediction}
+
+predicted_ratings <- matrix(NA, nrow = nrow(movie_ratings_df), ncol = ncol(movie_ratings_df)-1)
+
+for (i in 1:nrow(movie_ratings_df)) {
+  for (j in 2:ncol(movie_ratings_df)) {
+    predicted_ratings[i, j-1] <- overall_avg_rating + critic_biases[i] + movie_biases[j-1]
+  }
+}
+
+predicted_ratings_df <- as.data.frame(predicted_ratings)
+colnames(predicted_ratings_df) <- colnames(movie_ratings_df)[-1]
+predicted_ratings_df <- cbind(Critic = movie_ratings_df$Critic, predicted_ratings_df)
+
+print(predicted_ratings_df)
+
+
+```
+
+
+
